@@ -25,8 +25,8 @@ def get_available_clusters():
         return []
 
 def extract_version_from_image(image_string):
-    """Extract version from image string using regex"""
-    version_pattern = r'[v]?(\d+\.\d+(?:\.\d+)?(?:-\w+)?)'
+    """Extract version from image string before @sha if it exists"""
+    version_pattern = r':([^:@]+)(?:@sha256:.+)?$'  
     match = re.search(version_pattern, image_string)
     if match:
         return match.group(1)
