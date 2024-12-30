@@ -49,14 +49,32 @@ function FilteringTable() {
     const [searchInput, setSearchInput] = useState('');
     const [currentPage, setCurrentPage] = useState(1);
     const rowsPerPage = 20;
+    
     const [isClusterOpen, setIsClusterOpen] = useState(false);
     const [selectedCluster, setSelectedCluster] = useState('');
     const [clusterSearchInput, setClusterSearchInput] = useState('');
     const clusterRef = useRef(null);
     const clusters = ['aks-pe-poc', 'cluster 2'];
 
+    const [isNamespaceOpen, setIsNamespaceOpen] = useState(false);
+    const [selectedNamespace, setSelectedNamespace] = useState('');
+    const [namespaceSearchInput, setNamespaceSearchInput] = useState('');
+    const namespaceRef = useRef(null);
+    const namespaces = [
+        'cogniassist-discovery',
+        'default',
+        'ingress-nginx',
+        'kube-node-lease',
+        'kube-public',
+        'kube-system'
+    ];
+
     const filteredClusters = clusters.filter(cluster => 
         cluster.toLowerCase().includes(clusterSearchInput.toLowerCase())
+    );
+
+    const filteredNamespaces = namespaces.filter(namespace => 
+        namespace.toLowerCase().includes(namespaceSearchInput.toLowerCase())
     );
 
     const processContainers = (containers) => {
@@ -107,6 +125,9 @@ function FilteringTable() {
             if (clusterRef.current && !clusterRef.current.contains(event.target)) {
                 setIsClusterOpen(false);
             }
+            if (namespaceRef.current && !namespaceRef.current.contains(event.target)) {
+                setIsNamespaceOpen(false);
+            }
         };
         document.addEventListener('mousedown', handleClickOutside);
         return () => document.removeEventListener('mousedown', handleClickOutside);
@@ -139,11 +160,14 @@ function FilteringTable() {
         return [...mainRows, ...initRows];
     });
 
-    const filteredData = processedData.filter(row =>
-        Object.values(row).some(value =>
+    const filteredData = processedData.filter(row => {
+        const matchesSearch = Object.values(row).some(value =>
             String(value).toLowerCase().includes(searchInput.toLowerCase())
-        )
-    );
+        );
+        const matchesNamespace = !selectedNamespace || row.namespace === selectedNamespace;
+        
+        return matchesSearch && matchesNamespace;
+    });
 
     const totalPages = Math.ceil(filteredData.length / rowsPerPage);
     const startIndex = (currentPage - 1) * rowsPerPage;
@@ -163,6 +187,17 @@ function FilteringTable() {
                         onSearchChange={setClusterSearchInput}
                         placeholder="Cluster"
                         dropdownRef={clusterRef}
+                    />
+                    <CustomDropdown
+                        isOpen={isNamespaceOpen}
+                        setIsOpen={setIsNamespaceOpen}
+                        options={filteredNamespaces}
+                        value={selectedNamespace}
+                        onChange={setSelectedNamespace}
+                        searchValue={namespaceSearchInput}
+                        onSearchChange={setNamespaceSearchInput}
+                        placeholder="Namespace"
+                        dropdownRef={namespaceRef}
                     />
                 </div>
                 <div className="search-wrapper">

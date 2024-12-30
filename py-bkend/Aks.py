@@ -98,7 +98,7 @@ def get_cluster_info(cluster_name):
                 "message": str(e)
             }
         }
-
+ 
 @app.route('/api/health', methods=['GET'])
 def health_check():
     """Health check endpoint"""
