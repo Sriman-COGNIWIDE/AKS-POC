@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 
+// CustomDropdown component remains exactly the same
 function CustomDropdown({ isOpen, setIsOpen, options, value, onChange, searchValue, onSearchChange, placeholder, dropdownRef }) {
     const searchInputRef = useRef(null);
 
@@ -43,42 +44,46 @@ function CustomDropdown({ isOpen, setIsOpen, options, value, onChange, searchVal
 }
 
 function FilteringTable() {
-
     const [data, setData] = useState([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
-
     const [searchInput, setSearchInput] = useState('');
     const [currentPage, setCurrentPage] = useState(1);
     const rowsPerPage = 20;
-
     const [isClusterOpen, setIsClusterOpen] = useState(false);
     const [selectedCluster, setSelectedCluster] = useState('');
     const [clusterSearchInput, setClusterSearchInput] = useState('');
-
     const clusterRef = useRef(null);
-
     const clusters = ['aks-pe-poc', 'cluster 2'];
 
     const filteredClusters = clusters.filter(cluster => 
         cluster.toLowerCase().includes(clusterSearchInput.toLowerCase())
     );
 
+    const processContainers = (containers) => {
+        if (!containers || containers.length === 0) return [{ image: 'None', version: '-' }];
+        
+        return containers.flatMap(container => {
+            const images = container.image.split(',').map(img => img.trim());
+            const versions = container.version.split(',').map(ver => ver.trim());
+            
+            return images.map((image, index) => ({
+                image: image,
+                version: versions[index] || versions[0]
+            }));
+        });
+    };
+
     const fetchData = async (cluster) => {
         if (!cluster) return;
-
         setLoading(true);
         setError(null);
-
         try {
             const response = await fetch(`http://localhost:5000/api/clusters/${cluster}/deployments`);
-
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
-
             const responseData = await response.json();
-
             if (responseData.status === 'success') {
                 setData(responseData.data);
             } else {
@@ -92,47 +97,59 @@ function FilteringTable() {
         }
     };
 
-    // Fetch data when cluster changes
     useEffect(() => {
         if (selectedCluster) {
             fetchData(selectedCluster);
         }
     }, [selectedCluster]);
 
-    // Handle click outside dropdowns
     useEffect(() => {
         const handleClickOutside = (event) => {
             if (clusterRef.current && !clusterRef.current.contains(event.target)) {
                 setIsClusterOpen(false);
             }
         };
-
         document.addEventListener('mousedown', handleClickOutside);
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
 
-    // Filter data based on search input
-    const filteredData = data.filter(row => 
-        Object.values(row).some(value => 
-            JSON.stringify(value).toLowerCase().includes(searchInput.toLowerCase())
+    const processedData = data.flatMap(row => {
+        const mainContainers = processContainers(row['main-containers']);
+        const initContainers = processContainers(row['init-containers']);
+
+        const mainRows = mainContainers
+            .filter(container => container.image !== 'None')
+            .map(container => ({
+                deploymentName: row['deployment-name'],
+                namespace: row.namespace,
+                version: container.version,
+                mainContainerImage: container.image,
+                initContainerImage: 'None'
+            }));
+
+        const initRows = initContainers
+            .filter(container => container.image !== 'None')
+            .map(container => ({
+                deploymentName: row['deployment-name'],
+                namespace: row.namespace,
+                version: container.version,
+                mainContainerImage: 'None',
+                initContainerImage: container.image
+            }));
+
+        // Only return rows if there are actual containers
+        return [...mainRows, ...initRows];
+    });
+
+    const filteredData = processedData.filter(row =>
+        Object.values(row).some(value =>
+            String(value).toLowerCase().includes(searchInput.toLowerCase())
         )
     );
 
-    // Calculate pagination
     const totalPages = Math.ceil(filteredData.length / rowsPerPage);
     const startIndex = (currentPage - 1) * rowsPerPage;
     const paginatedData = filteredData.slice(startIndex, startIndex + rowsPerPage);
-
-    // Function to render container information
-    const renderContainers = (containers) => {
-        if (!containers || containers.length === 0) return 'None';
-        return containers.map((container, index) => (
-            <div key={index} className="container-info">
-                <div>Image: {container.image}</div>
-                <div>Version: {container.version}</div>
-            </div>
-        ));
-    };
 
     return (
         <div className="table-container">
@@ -170,22 +187,24 @@ function FilteringTable() {
                         <tr>
                             <th>Deployment Name</th>
                             <th>Namespace</th>
-                            <th>Main Containers</th>
-                            <th>Init Containers</th>
+                            <th>Version</th>
+                            <th>Main Container Image</th>
+                            <th>Init Container Image</th>
                         </tr>
                     </thead>
                     <tbody>
                         {paginatedData.map((row, index) => (
                             <tr key={index}>
-                                <td>{row['deployment-name']}</td>
+                                <td>{row.deploymentName}</td>
                                 <td>{row.namespace}</td>
-                                <td>{renderContainers(row['main-containers'])}</td>
-                                <td>{renderContainers(row['init-containers'])}</td>
+                                <td>{row.version}</td>
+                                <td>{row.mainContainerImage}</td>
+                                <td>{row.initContainerImage}</td>
                             </tr>
                         ))}
                         {!loading && paginatedData.length === 0 && (
                             <tr>
-                                <td colSpan={4} className="no-data">
+                                <td colSpan={5} className="no-data">
                                     No data available
                                 </td>
                             </tr>

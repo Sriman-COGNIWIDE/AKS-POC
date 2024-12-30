@@ -1,22 +1,27 @@
-export const COLUMNS =[
+export const COLUMNS = [
     {
         Header: 'Deployment Name',
         Footer: 'Deployment Name',
-        accessor: 'deployment-name'
+        accessor: 'deploymentName'
     },
     {
-        Header: 'NameSpace',
-        Footer: 'NameSpace',
+        Header: 'Namespace',
+        Footer: 'Namespace',
         accessor: 'namespace'
-    }, 
-    {
-        Header: 'Main Container Images',
-        Footer: 'Main Container Images',
-        accessor: 'main-container-images'
     },
     {
-        Header: 'Side Container Images',
-        Footer: 'Side Container Images',
-        accessor: 'init-container-images'
+        Header: 'Version',
+        Footer: 'Version',
+        accessor: 'version'
+    },
+    {
+        Header: 'Main Container Image',
+        Footer: 'Main Container Image',
+        accessor: 'mainContainerImage'
+    },
+    {
+        Header: 'Init Container Image',
+        Footer: 'Init Container Image',
+        accessor: 'initContainerImage'
     }
-]
+];
