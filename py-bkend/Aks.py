@@ -50,13 +50,10 @@ def process_container_images(containers):
 def get_cluster_info(cluster_name):
     """Get information about deployments from specific cluster"""
     try:
-        # Disable SSL verification warnings
         urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
         
-        # Get available clusters
         available_clusters = get_available_clusters()
         
-        # Check if requested cluster exists
         if cluster_name not in available_clusters:
             return {
                 "status": "error",
@@ -66,23 +63,18 @@ def get_cluster_info(cluster_name):
                 }
             }
         
-        # Load the specific cluster context
         load_kube_config(context=cluster_name)
         
-        # Create API clients
         apps_v1 = client.AppsV1Api()
         v1 = client.CoreV1Api()
         
-        # Initialize result list
         cluster_info = []
         
-        # Get all namespaces
         namespaces = v1.list_namespace()
         
         for ns in namespaces.items:
             namespace_name = ns.metadata.name
             
-            # Get deployments for namespace
             deployments = apps_v1.list_namespaced_deployment(namespace_name)
             
             for deployment in deployments.items:

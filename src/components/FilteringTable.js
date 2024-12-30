@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
 
-// CustomDropdown component remains exactly the same
 function CustomDropdown({ isOpen, setIsOpen, options, value, onChange, searchValue, onSearchChange, placeholder, dropdownRef }) {
     const searchInputRef = useRef(null);
 
@@ -137,7 +136,6 @@ function FilteringTable() {
                 initContainerImage: container.image
             }));
 
-        // Only return rows if there are actual containers
         return [...mainRows, ...initRows];
     });
 
