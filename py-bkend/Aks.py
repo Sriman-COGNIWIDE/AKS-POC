@@ -1,39 +1,41 @@
 from flask import Flask, jsonify
-from kubernetes import client, config
+from kubernetes import client
 import urllib3
 import re
 from flask_cors import CORS
 import os
-from kubernetes.client import ApiClient
-from kubernetes.config import list_kube_config_contexts, load_kube_config
 
 app = Flask(__name__)
 CORS(app, resources={
     r"/api/*": {
-        "origins": "*",  
+        "origins": "*",
         "methods": ["GET", "OPTIONS", "POST"],
         "allow_headers": ["Content-Type"]
     }
 })
 
+CLUSTERS = {
+    "minikube": {
+        "host": "https://127.0.0.1:52009",
+        "token": os.environ.get("MINIKUBE_TOKEN")
+    },
+    "aks-pe-poc": {
+        "host": "https://aks-pe-poc-dns-t2aw702d.hcp.centralindia.azmk8s.io:443",
+        "token": os.environ.get("AKS_TOKEN")
+    }
+}
+
 def get_available_clusters():
-    """Get list of available clusters from kube config"""
-    try:
-        contexts, active_context = list_kube_config_contexts()
-        return [context['name'] for context in contexts]
-    except:
-        return []
+    return list(CLUSTERS.keys())
 
 def extract_version_from_image(image_string):
-    """Extract version from image string before @sha if it exists"""
-    version_pattern = r':([^:@]+)(?:@sha256:.+)?$'  
+    version_pattern = r':([^:@]+)(?:@sha256:.+)?$'
     match = re.search(version_pattern, image_string)
     if match:
         return match.group(1)
     return "unknown"
 
 def process_container_images(containers):
-    """Process container images and extract versions"""
     if not containers:
         return []
     
@@ -48,22 +50,23 @@ def process_container_images(containers):
     return container_info
 
 def get_cluster_info(cluster_name):
-    """Get information about deployments from specific cluster"""
     try:
         urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
         
-        available_clusters = get_available_clusters()
-        
-        if cluster_name not in available_clusters:
+        if cluster_name not in CLUSTERS:
             return {
                 "status": "error",
                 "error": {
                     "type": "ClusterNotFound",
-                    "message": f"Cluster '{cluster_name}' not found. Available clusters: {available_clusters}"
+                    "message": f"Cluster '{cluster_name}' not found. Available clusters: {get_available_clusters()}"
                 }
             }
         
-        load_kube_config(context=cluster_name)
+        configuration = client.Configuration()
+        configuration.host = CLUSTERS[cluster_name]["host"]
+        configuration.verify_ssl = False
+        configuration.api_key = {"authorization": f"Bearer {CLUSTERS[cluster_name]['token']}"}
+        client.Configuration.set_default(configuration)
         
         apps_v1 = client.AppsV1Api()
         v1 = client.CoreV1Api()
@@ -98,15 +101,13 @@ def get_cluster_info(cluster_name):
                 "message": str(e)
             }
         }
- 
+
 @app.route('/api/health', methods=['GET'])
 def health_check():
-    """Health check endpoint"""
     return jsonify({"status": "healthy"})
 
 @app.route('/api/clusters', methods=['GET'])
 def list_clusters():
-    """List all available clusters"""
     try:
         clusters = get_available_clusters()
         return jsonify({
@@ -124,7 +125,6 @@ def list_clusters():
 
 @app.route('/api/clusters/<cluster_name>/deployments', methods=['GET'])
 def get_deployments(cluster_name):
-    """Get deployments for a specific cluster"""
     try:
         result = get_cluster_info(cluster_name)
         if result.get("status") == "error":

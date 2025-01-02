@@ -127,7 +127,7 @@
   border: 1px solid #e2e8f0;
   border-radius: 8px;
   margin-top: 4px;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4px 6px rgba(122, 47, 47, 0.1);
   z-index: 1000;
   overflow: hidden; 
 }
@@ -145,7 +145,7 @@
   padding: 8px 12px;
   cursor: pointer;
   font-size: 14px;
-  color: #2d3748;
+  color: #20478a;
   transition: background-color 0.2s ease;
 }
 
@@ -164,7 +164,7 @@ table {
 }
 
 thead {
-  background: #2c3e50;
+  background: #28527d;
   color: white;
 }
 
@@ -175,7 +175,7 @@ th {
   font-size: 14px;
   letter-spacing: 0.03em;
   text-transform: uppercase;
-  border-bottom: 2px solid #34495e;
+  border-bottom: 2px solid #090a0a;
 }
 
 tbody tr {

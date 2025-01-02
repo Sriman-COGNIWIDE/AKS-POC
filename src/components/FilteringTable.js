@@ -54,7 +54,7 @@ function FilteringTable() {
     const [selectedCluster, setSelectedCluster] = useState('');
     const [clusterSearchInput, setClusterSearchInput] = useState('');
     const clusterRef = useRef(null);
-    const clusters = ['aks-pe-poc', 'cluster 2'];
+    const clusters = ['aks-pe-poc', 'cluster 2', 'minikube'];
 
     const [isNamespaceOpen, setIsNamespaceOpen] = useState(false);
     const [selectedNamespace, setSelectedNamespace] = useState('');
