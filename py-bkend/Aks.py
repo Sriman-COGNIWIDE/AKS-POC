@@ -16,7 +16,7 @@ CORS(app, resources={
 
 CLUSTERS = {
     "minikube": {
-        "host": "https://127.0.0.1:52009",
+        "host": "https://127.0.0.1:65046",
         "token": os.environ.get("MINIKUBE_TOKEN")
     },
     "aks-pe-poc": {
@@ -102,6 +102,19 @@ def get_cluster_info(cluster_name):
             }
         }
 
+def get_all_clusters_info():
+    all_deployments = []
+    
+    for cluster_name in CLUSTERS.keys():
+        result = get_cluster_info(cluster_name)
+        if result.get("status") == "success":
+            all_deployments.extend(result["data"])
+    
+    return {
+        "status": "success",
+        "data": all_deployments
+    }
+
 @app.route('/api/health', methods=['GET'])
 def health_check():
     return jsonify({"status": "healthy"})
@@ -114,6 +127,25 @@ def list_clusters():
             "status": "success",
             "data": clusters
         })
+    except Exception as e:
+        return jsonify({
+            "status": "error",
+            "error": {
+                "type": "GeneralException",
+                "message": str(e)
+            }
+        }), 500
+
+@app.route('/api/<env>', methods=['GET'])
+def get_deployments_by_env(env):
+    try:
+        if env.lower() == "poc":
+            result = get_all_clusters_info()
+        
+        if result.get("status") == "error":
+            return jsonify(result), 404
+        return jsonify(result)
+        
     except Exception as e:
         return jsonify({
             "status": "error",
