@@ -18,7 +18,7 @@ CORS(app, resources={
     }
 })
  
-CACHE_DURATION = 300
+CACHE_DURATION = 30
  
 CLUSTERS = {
     "minikube": {
@@ -107,7 +107,7 @@ def get_cluster_info_cached(cluster_name, timestamp):
                 namespace_info.append(deployment_info)
             return namespace_info
        
-        futures = [executor.submit(process_namespace, ns) for ns in namespaces.items]
+        futures = [executor.submit(process_namespace, ns) for ns in namespaces.items] #function scheduling and list comprehension
         for future in futures:
             cluster_info.extend(future.result())
            
